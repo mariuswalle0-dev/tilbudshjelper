@@ -1,52 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import type { GenerateQuoteRequest, GenerateQuoteResult } from "@/types/quote";
+import type { GenerateQuoteRequest } from "@/types/quote";
 
 interface Props {
-  onResult: (result: GenerateQuoteResult) => void;
+  onSubmit: (data: GenerateQuoteRequest) => void;
   loading: boolean;
-  setLoading: (v: boolean) => void;
 }
 
-export default function QuoteForm({ onResult, loading, setLoading }: Props) {
+export default function QuoteForm({ onSubmit, loading }: Props) {
   const [description, setDescription] = useState("");
   const [region, setRegion] = useState<GenerateQuoteRequest["region"]>("other");
-  const [hourlyRate, setHourlyRate] = useState<string>("");
+  const [hourlyRate, setHourlyRate] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!description.trim()) return;
-
-    setLoading(true);
-    try {
-      const body: GenerateQuoteRequest = {
-        description,
-        region,
-        hourly_rate: hourlyRate ? parseInt(hourlyRate) : undefined,
-      };
-
-      const res = await fetch("/api/quote/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      const data: GenerateQuoteResult = await res.json();
-      onResult(data);
-    } catch {
-      onResult({ ok: false, error: "Nettverksfeil – prøv igjen" });
-    } finally {
-      setLoading(false);
-    }
+    onSubmit({
+      description,
+      region,
+      hourly_rate: hourlyRate ? parseInt(hourlyRate) : undefined,
+    });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Prosjektbeskrivelse
-        </label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Prosjektbeskrivelse</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -59,15 +39,11 @@ export default function QuoteForm({ onResult, loading, setLoading }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Region
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Region</label>
           <select
             value={region}
-            onChange={(e) =>
-              setRegion(e.target.value as GenerateQuoteRequest["region"])
-            }
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+            onChange={(e) => setRegion(e.target.value as GenerateQuoteRequest["region"])}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
             disabled={loading}
           >
             <option value="other">Resten av Norge</option>
@@ -75,11 +51,8 @@ export default function QuoteForm({ onResult, loading, setLoading }: Props) {
             <option value="bergen">Bergen-området</option>
           </select>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Din timepris (NOK, valgfritt)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Din timepris (NOK)</label>
           <input
             type="number"
             value={hourlyRate}
@@ -87,7 +60,7 @@ export default function QuoteForm({ onResult, loading, setLoading }: Props) {
             placeholder="750"
             min={400}
             max={2000}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
             disabled={loading}
           />
         </div>
@@ -96,7 +69,7 @@ export default function QuoteForm({ onResult, loading, setLoading }: Props) {
       <button
         type="submit"
         disabled={loading || !description.trim()}
-        className="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? "Genererer tilbud…" : "Generer tilbud"}
       </button>

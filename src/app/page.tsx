@@ -1,53 +1,49 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import QuoteForm from "@/components/QuoteForm";
 import QuoteResult from "@/components/QuoteResult";
-import UserNav from "@/components/UserNav";
-import type { GenerateQuoteResult } from "@/types/quote";
+import type { AIQuoteResponse, GenerateQuoteRequest } from "@/types/quote";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<GenerateQuoteResult | null>(null);
+  const [quote, setQuote] = useState<AIQuoteResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(data: GenerateQuoteRequest) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/quote/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      setQuote(json.quote);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Noe gikk galt");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <main className="min-h-screen flex flex-col items-center py-16 px-4">
       <div className="w-full max-w-2xl">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Tilbudshjelper</h1>
-            <p className="mt-1 text-gray-500 text-sm">Beskriv prosjektet – få et ferdig tilbud på sekunder</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/quotes" className="text-sm text-gray-500 hover:text-gray-800 transition-colors">
-              Historikk →
-            </Link>
-            <UserNav />
-          </div>
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-gray-900">Tilbudshjelper</h1>
+          <p className="mt-2 text-gray-500 text-sm">Beskriv prosjektet – få et ferdig tilbud på sekunder</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
-          {result?.ok && result.quote ? (
-            <QuoteResult
-              quote={result.quote}
-              quoteNumber={result.quoteNumber}
-              quoteId={result.quoteId}
-              onReset={() => setResult(null)}
-            />
+          {quote ? (
+            <QuoteResult quote={quote} onReset={() => setQuote(null)} />
           ) : (
             <>
-              <QuoteForm
-                onResult={setResult}
-                loading={loading}
-                setLoading={setLoading}
-              />
-              {result && !result.ok && (
-                <p className="mt-4 text-sm text-red-600 bg-red-50 rounded-lg px-4 py-3">
-                  {result.error}
-                </p>
-              )}
+              <QuoteForm onSubmit={handleSubmit} loading={loading} />
+              {error && <p className="mt-4 text-sm text-red-600 bg-red-50 rounded-lg px-4 py-3">{error}</p>}
             </>
           )}
         </div>

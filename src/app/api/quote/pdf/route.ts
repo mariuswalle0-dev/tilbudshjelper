@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   try {
     const buffer = await renderToBuffer(
       QuotePDF({
-        quote: quote as AIQuoteResponse,
+        quote: quote as unknown as AIQuoteResponse,
         quoteNumber,
         companyName,
         companyEmail,
